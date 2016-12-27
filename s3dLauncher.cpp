@@ -42,8 +42,15 @@ int main()
 		return EXIT_FAILURE;
 	}
 	RegCloseKey( hKey );
+	hKey = 0;
+	if ( RegOpenKeyExA( HKEY_CURRENT_USER, "SOFTWARE\\Simplify3D\\S3D-Software\\FFF", 0, KEY_ALL_ACCESS, &hKey ) != ERROR_SUCCESS ||
+			RegDeleteValueA( hKey, "profileName" ) != ERROR_SUCCESS ||
+			RegDeleteValueA( hKey, "profileVersion" ) != ERROR_SUCCESS ) {
+		MessageBoxA( 0, "Error modifying registry", "Error", MB_OK | MB_ICONERROR );
+		return EXIT_FAILURE;
+	}
+	RegCloseKey( hKey );
 
-	//if ( !CreateProcessA( 0, simplify3d, 0, 0, FALSE, 0, 0, 0, 0, 0 ) ) {
 	if ( (uintmax_t) ShellExecuteA( 0, "open", executable, 0, 0, SW_SHOWDEFAULT ) <= 32 ) {
 		MessageBoxA( 0, "Error starting Simplify3D", "Error", MB_OK | MB_ICONERROR );
 		return EXIT_FAILURE;
