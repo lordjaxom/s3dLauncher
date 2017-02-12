@@ -44,7 +44,7 @@ int main()
     	HKEY hKey = 0;
 	if ( RegOpenKeyExA( HKEY_CURRENT_USER, "SOFTWARE\\Simplify3D\\S3D-Software\\FFFWindow", 0, KEY_ALL_ACCESS, &hKey ) != ERROR_SUCCESS ||
 			RegSetValueExA( hKey, "profileDatabaseContents", 0, REG_MULTI_SZ, (BYTE*) contents.data(), contents.size() ) != ERROR_SUCCESS ||
-			RegSetValueExA( hKey, "profileDatabaseNames", 0, REG_MULTI_SZ, (BYTE*) "Replicator\0Ultimaker\0\0", 12 ) != ERROR_SUCCESS ) {
+			RegSetValueExA( hKey, "profileDatabaseNames", 0, REG_MULTI_SZ, (BYTE*) "Replicator\0Ultimaker\0\0", 22 ) != ERROR_SUCCESS ) {
 		MessageBoxA( 0, "Error writing FFF-Database contents to registry", "Error", MB_OK | MB_ICONERROR );
 		return EXIT_FAILURE;
 	}
