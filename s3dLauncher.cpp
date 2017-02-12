@@ -7,48 +7,55 @@
 #include <Shellapi.h>
 
 static char const* factory = "C:\\Users\\lordjaxom\\AppData\\Local\\Simplify3D\\S3D-Software\\savedState.factory";
-static char const* profile = "Replicator.fff";
+static char const* profiles[] = { "Replicator.fff", "Ultimaker.fff" };
 static char const* executable = "Simplify3D.exe";
 
 using namespace std;
 
-int main()
+std::string readFileSkipNewlines( char const* path )
 {
-	DeleteFileA( factory );
-
-	ifstream ifs( profile, ios::in );
-
-	string contents;
+	ifstream ifs( path, ios::in );
+	string result;
 	char c;
 	while ( ifs && !ifs.get( c ).eof() ) {
 		if ( c == '\n' || c == '\r' ) {
 			continue;
 		}
-		contents.push_back( c );
+		result.push_back( c );
 	}
-	contents.push_back( '\0' );
-	contents.push_back( '\0' );
-
 	if ( ifs.bad() ) {
-		MessageBoxA( 0, "Error reading profile", "Error", MB_OK | MB_ICONERROR );
-		return EXIT_FAILURE;
+		std::string message = std::string( "Error reading profile " ) + path;
+		MessageBoxA( 0, message.c_str(), "Error", MB_OK | MB_ICONERROR );
+		exit( EXIT_FAILURE );
 	}
-    
-    HKEY hKey = 0;
+	return result;
+}
+
+int main()
+{
+	DeleteFileA( factory );
+
+	string contents;
+	for ( size_t i = 0 ; i < sizeof( profiles ) / sizeof( profiles[ 0 ] ) ; ++i ) {
+		contents += readFileSkipNewlines( profiles[ i ] ) + '\0';
+	}
+	contents += '\0';
+
+    	HKEY hKey = 0;
 	if ( RegOpenKeyExA( HKEY_CURRENT_USER, "SOFTWARE\\Simplify3D\\S3D-Software\\FFFWindow", 0, KEY_ALL_ACCESS, &hKey ) != ERROR_SUCCESS ||
 			RegSetValueExA( hKey, "profileDatabaseContents", 0, REG_MULTI_SZ, (BYTE*) contents.data(), contents.size() ) != ERROR_SUCCESS ||
-			RegSetValueExA( hKey, "profileDatabaseNames", 0, REG_MULTI_SZ, (BYTE*) "Replicator\0\0", 12 ) != ERROR_SUCCESS ) {
-		MessageBoxA( 0, "Error modifying registry", "Error", MB_OK | MB_ICONERROR );
+			RegSetValueExA( hKey, "profileDatabaseNames", 0, REG_MULTI_SZ, (BYTE*) "Replicator\0Ultimaker\0\0", 12 ) != ERROR_SUCCESS ) {
+		MessageBoxA( 0, "Error writing FFF-Database contents to registry", "Error", MB_OK | MB_ICONERROR );
 		return EXIT_FAILURE;
 	}
 	RegCloseKey( hKey );
 	hKey = 0;
-	if ( RegOpenKeyExA( HKEY_CURRENT_USER, "SOFTWARE\\Simplify3D\\S3D-Software\\FFF", 0, KEY_ALL_ACCESS, &hKey ) != ERROR_SUCCESS ||
-			RegDeleteValueA( hKey, "profileName" ) != ERROR_SUCCESS ||
-			RegDeleteValueA( hKey, "profileVersion" ) != ERROR_SUCCESS ) {
+	if ( RegOpenKeyExA( HKEY_CURRENT_USER, "SOFTWARE\\Simplify3D\\S3D-Software\\FFF", 0, KEY_ALL_ACCESS, &hKey ) != ERROR_SUCCESS ) {
 		MessageBoxA( 0, "Error modifying registry", "Error", MB_OK | MB_ICONERROR );
 		return EXIT_FAILURE;
 	}
+	RegDeleteValueA( hKey, "profileName" );
+	RegDeleteValueA( hKey, "profileVersion" );
 	RegCloseKey( hKey );
 
 	if ( (uintmax_t) ShellExecuteA( 0, "open", executable, 0, 0, SW_SHOWDEFAULT ) <= 32 ) {
